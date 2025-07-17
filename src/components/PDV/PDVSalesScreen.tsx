@@ -862,7 +862,7 @@ const PDVSalesScreen: React.FC<PDVSalesScreenProps> = ({ scaleHook, operator, st
             
             <button
               onClick={handleFinalizeSale}
-              disabled={isProcessing || items.length === 0 || (splitPayment && getRemainingAmount() > 0)}
+              disabled={isProcessing || items.length === 0 || (splitPayment && getRemainingAmount() > 0) || !isCashRegisterOpen}
               className="w-full bg-green-500 hover:bg-green-600 disabled:bg-gray-300 text-white py-3 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
             >
               {isProcessing ? (
