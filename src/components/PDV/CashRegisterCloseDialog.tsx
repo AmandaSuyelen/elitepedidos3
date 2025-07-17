@@ -124,13 +124,7 @@ const CashRegisterCloseDialog: React.FC<CashRegisterCloseDialogProps> = ({
       console.error('Erro ao enviar WhatsApp: Dados do caixa não disponíveis', { register, summary });
       return;
     }
-    
-    if (!register || !summary) {
-      alert('Erro: Dados do caixa não disponíveis. Por favor, tente novamente.');
-      console.error('Erro ao enviar WhatsApp: Dados do caixa não disponíveis', { register, summary });
-      return;
-    }
-    
+
     const message = generateWhatsAppMessage();
     window.open(`https://wa.me/5585989041010?text=${message}`, '_blank');
   };
@@ -193,21 +187,10 @@ const CashRegisterCloseDialog: React.FC<CashRegisterCloseDialogProps> = ({
                 <span className="font-bold">Ver</span> Relatório de Caixa Diário
               </button>
             )}
-            
-            
-            {onViewDailyReport && (
-              <button
-                onClick={onViewDailyReport}
-                className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-xl font-semibold transition-colors flex items-center justify-center gap-2 shadow-sm hover:shadow-md"
-              >
-                <FileText size={20} />
-                <span className="font-bold">Ver</span> Relatório de Caixa Diário
-              </button>
-            )}
+
             
             <button 
               onClick={handleSendWhatsApp}
-              disabled={!register || !summary}
               disabled={!register || !summary}
               className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white py-3 rounded-xl font-semibold transition-colors flex items-center justify-center gap-2 shadow-sm hover:shadow-md"
             >
