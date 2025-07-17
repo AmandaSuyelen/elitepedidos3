@@ -16,7 +16,8 @@ import {
   Check,
   RefreshCw,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  AlertCircle
 } from 'lucide-react';
 import CashRegisterDetails from './CashRegisterDetails';
 import CashRegisterCloseConfirmation from './CashRegisterCloseConfirmation';
@@ -38,6 +39,7 @@ const CashRegisterMenu: React.FC = () => {
     refreshData
   } = usePDVCashRegister();
 
+  const [supabaseConfigured, setSupabaseConfigured] = useState(true);
   const [showOpenRegister, setShowOpenRegister] = useState(false);
   const [showCloseRegister, setShowCloseRegister] = useState(false);
   const [showCashEntry, setShowCashEntry] = useState(false);
@@ -53,6 +55,19 @@ const CashRegisterMenu: React.FC = () => {
   const [showPrintView, setShowPrintView] = useState(false);
   const [closedRegister, setClosedRegister] = useState<any>(null);
   const [isClosing, setIsClosing] = useState(false);
+  
+  // Check Supabase configuration on mount
+  React.useEffect(() => {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    
+    const isConfigured = supabaseUrl && supabaseKey && 
+                        supabaseUrl !== 'your_supabase_url_here' && 
+                        supabaseKey !== 'your_supabase_anon_key_here' &&
+                        !supabaseUrl.includes('placeholder');
+    
+    setSupabaseConfigured(isConfigured);
+  }, []);
 
   const [billCounts, setBillCounts] = useState({
     '200': 0,
@@ -214,6 +229,24 @@ const CashRegisterMenu: React.FC = () => {
   return (
     <PermissionGuard hasPermission={hasPermission('can_view_cash_register') || hasPermission('can_view_cash_report')} showMessage={true}>
       <div className="space-y-6">
+        {/* Supabase Configuration Warning */}
+        {!supabaseConfigured && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+            <div className="flex items-center gap-3">
+              <div className="bg-red-100 rounded-full p-2">
+                <AlertCircle size={20} className="text-red-600" />
+              </div>
+              <div>
+                <h3 className="font-medium text-red-800">Funcionalidade de Caixa Indisponível</h3>
+                <p className="text-red-700 text-sm">
+                  O sistema de caixa requer configuração do Supabase. Configure as variáveis de ambiente 
+                  VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY para usar esta funcionalidade.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+        
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -306,6 +339,7 @@ const CashRegisterMenu: React.FC = () => {
         {!isOpen && (
           <button
             onClick={() => setShowOpenRegister(true)}
+            disabled={!supabaseConfigured}
             className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors"
           >
             <Plus size={18} />
@@ -313,7 +347,7 @@ const CashRegisterMenu: React.FC = () => {
           </button>
         )}
 
-        {isOpen && (
+        {isOpen && supabaseConfigured && (
           <>
             <button
               onClick={() => setShowCashEntry(true)}
