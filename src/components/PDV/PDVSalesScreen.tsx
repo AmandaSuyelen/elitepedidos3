@@ -12,10 +12,11 @@ import { supabase } from '../../lib/supabase';
 
 interface PDVSalesScreenProps {
   scaleHook?: ReturnType<typeof useScale>;
+  operator?: any;
   storeSettings?: any;
 }
 
-const PDVSalesScreen: React.FC<PDVSalesScreenProps> = ({ scaleHook, storeSettings }) => {
+const PDVSalesScreen: React.FC<PDVSalesScreenProps> = ({ scaleHook, operator, storeSettings }) => {
   // State for search and filters
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -64,7 +65,7 @@ const PDVSalesScreen: React.FC<PDVSalesScreenProps> = ({ scaleHook, storeSetting
   }, []);
 
   const { products, loading: productsLoading, searchProducts } = usePDVProducts();
-  const { isOpen: isCashRegisterOpen } = usePDVCashRegister();
+  const { isOpen: isCashRegisterOpen, currentRegister } = usePDVCashRegister();
   const { 
     currentWeight,
     requestStableWeight,
@@ -339,8 +340,13 @@ const PDVSalesScreen: React.FC<PDVSalesScreenProps> = ({ scaleHook, storeSetting
     try {
       console.log('🚀 Iniciando finalização da venda...');
       
+      // Check if cash register is open
+      if (!isCashRegisterOpen || !currentRegister) {
+        throw new Error('Não é possível finalizar venda sem um caixa aberto');
+      }
+      
       const saleData = {
-        operator_id: 'admin-id', // TODO: Pegar do contexto de autenticação
+        operator_id: operator?.id || 'admin-id',
         customer_name: customerName || undefined,
         customer_phone: customerPhone || undefined,
         subtotal: getSubtotal(),
@@ -372,6 +378,55 @@ const PDVSalesScreen: React.FC<PDVSalesScreenProps> = ({ scaleHook, storeSetting
       const sale = await createSale(saleData, saleItems, true, true);
       
       console.log('✅ Venda finalizada com sucesso:', sale);
+      
+      // Show success modal with better design
+      const successModal = document.createElement('div');
+      successModal.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm';
+      successModal.innerHTML = `
+        <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 transform transition-all">
+          <div class="text-center">
+            <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+            </div>
+            <h3 class="text-xl font-bold text-gray-900 mb-2">Venda finalizada!</h3>
+            <p class="text-gray-600 mb-6">Número: <span class="font-mono font-bold text-purple-600">${sale.sale_number}</span></p>
+            <div class="flex flex-col gap-3">
+              <button class="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-semibold transition-colors">
+                Imprimir Comprovante
+              </button>
+              <button class="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 rounded-lg font-medium transition-colors">
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      document.body.appendChild(successModal);
+      
+      // Add event listeners to buttons
+      const buttons = successModal.querySelectorAll('button');
+      if (buttons.length >= 2) {
+        // Print button
+        buttons[0].addEventListener('click', () => {
+          handlePrintReceipt();
+          document.body.removeChild(successModal);
+        });
+        
+        // Close button
+        buttons[1].addEventListener('click', () => {
+          document.body.removeChild(successModal);
+        });
+      }
+      
+      // Auto-close after 5 seconds
+      setTimeout(() => {
+        if (document.body.contains(successModal)) {
+          document.body.removeChild(successModal);
+        }
+      }, 5000);
 
       // Limpar carrinho
       clearCart();
@@ -381,8 +436,6 @@ const PDVSalesScreen: React.FC<PDVSalesScreenProps> = ({ scaleHook, storeSetting
       setShowPayment(false);
       setPayments([]);
       setSplitPayment(false);
-      
-      alert(`Venda finalizada! Número: ${sale.sale_number}`);
       
       // TODO: Imprimir cupom se configurado
       
@@ -394,7 +447,42 @@ const PDVSalesScreen: React.FC<PDVSalesScreenProps> = ({ scaleHook, storeSetting
         ? error.message 
         : 'Erro desconhecido ao finalizar venda';
         
-      alert(`Erro ao finalizar venda: ${errorMessage}`);
+      // Mostrar erro com estilo melhorado
+      const errorModal = document.createElement('div');
+      errorModal.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm';
+      errorModal.innerHTML = `
+        <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 transform transition-all">
+          <div class="text-center">
+            <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <h3 class="text-xl font-bold text-gray-900 mb-2">Erro ao finalizar venda</h3>
+            <p class="text-gray-600 mb-6">${errorMessage}</p>
+            <button class="w-full bg-red-600 hover:bg-red-700 text-white py-3 rounded-lg font-semibold transition-colors">
+              Entendi
+            </button>
+          </div>
+        </div>
+      `;
+      
+      document.body.appendChild(errorModal);
+      
+      // Adicionar evento ao botão
+      const button = errorModal.querySelector('button');
+      if (button) {
+        button.addEventListener('click', () => {
+          document.body.removeChild(errorModal);
+        });
+      }
+      
+      // Auto-fechar após 5 segundos
+      setTimeout(() => {
+        if (document.body.contains(errorModal)) {
+          document.body.removeChild(errorModal);
+        }
+      }, 5000);
       
       // Log detalhado para depuração
       console.error('📊 Estado do carrinho no momento do erro:', {
@@ -449,6 +537,7 @@ const PDVSalesScreen: React.FC<PDVSalesScreenProps> = ({ scaleHook, storeSetting
   const handlePrintReceipt = () => {
     setShowPrintPreview(true);
   };
+
 
   // Handle scale test modal close with refresh of connection status
   const handleScaleTestClose = () => {
@@ -595,6 +684,21 @@ const PDVSalesScreen: React.FC<PDVSalesScreenProps> = ({ scaleHook, storeSetting
             </div>
           )}
         </div>
+        
+        {/* Cash Register Closed Warning */}
+        {!isCashRegisterOpen && (
+          <div className="bg-red-50 border-l-4 border-red-500 rounded-lg p-4 mt-4 shadow-md">
+            <div className="flex items-start gap-3">
+              <div className="bg-red-100 rounded-full p-2 mt-0.5">
+                <AlertCircle size={20} className="text-red-600" />
+              </div>
+              <div>
+                <h3 className="font-bold text-red-800 mb-1">Caixa Fechado</h3>
+                <p className="text-red-700">Não é possível realizar vendas sem um caixa aberto. Por favor, abra um caixa primeiro na aba "Caixas".</p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Carrinho e Pagamento */}
@@ -972,7 +1076,6 @@ const PDVSalesScreen: React.FC<PDVSalesScreenProps> = ({ scaleHook, storeSetting
               </div>
               
               <div className="mb-4">
-                <p>Forma de Pagamento: {paymentTypes.find(t => t.id === paymentType)?.label}</p>
                 {paymentType === 'dinheiro' && receivedAmount > 0 && (
                   <>
                     <p>Valor Recebido: {formatPrice(receivedAmount)}</p>

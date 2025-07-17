@@ -1,19 +1,32 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { Order, OrderStatus, ChatMessage } from '../types/order';
+import { usePDVCashRegister } from './usePDVCashRegister';
 
 export const useOrders = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { currentRegister, isOpen: isCashRegisterOpen } = usePDVCashRegister();
 
   const fetchOrders = useCallback(async () => {
     try {
       setLoading(true);
       console.log('🔄 Buscando pedidos...');
+      
+      // If no cash register is open, return empty array
+      if (!currentRegister) {
+        console.log('⚠️ Nenhum caixa aberto, não exibindo pedidos');
+        setOrders([]);
+        setLoading(false);
+        return;
+      }
+      
+      // Only fetch orders linked to the current cash register
       const { data, error } = await supabase
         .from('orders')
         .select('*')
+        .eq('cash_register_id', currentRegister.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -24,15 +37,21 @@ export const useOrders = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [currentRegister]);
 
   const createOrder = useCallback(async (orderData: Omit<Order, 'id' | 'created_at' | 'updated_at'>) => {
     try {
+      // Check if a cash register is open
+      if (!currentRegister) {
+        throw new Error('Não é possível criar pedidos sem um caixa aberto');
+      }
+      
       // Set channel to delivery if not specified
       // For manual orders, keep the channel as 'manual'
       const orderWithChannel = orderData.channel === 'manual' ? orderData : {
         ...orderData,
-        channel: orderData.channel || 'delivery'
+        channel: orderData.channel || 'delivery',
+        cash_register_id: currentRegister.id // Associate with current cash register
       };
       
       const { data, error } = await supabase
@@ -68,7 +87,7 @@ export const useOrders = () => {
     } catch (err) {
       throw new Error(err instanceof Error ? err.message : 'Erro ao criar pedido');
     }
-  }, []);
+  }, [currentRegister]);
 
   const updateOrderStatus = useCallback(async (orderId: string, status: OrderStatus) => {
     try {
@@ -195,38 +214,56 @@ export const useOrders = () => {
   useEffect(() => {
     fetchOrders();
 
-    // Configurar realtime para pedidos
-    const ordersChannel = supabase
-      .channel('orders')
-      .on('postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'orders' },
-        (payload) => {
-          console.log('🔔 Novo pedido recebido via realtime:', payload);
-          setOrders(prev => [payload.new as Order, ...prev]);
-          // Tocar som de notificação
-          playNotificationSound();
-        }
-      )
-      .on('postgres_changes', 
-        { event: 'UPDATE', schema: 'public', table: 'orders' },
-        (payload) => {
-          console.log('🔄 Pedido atualizado via realtime:', payload);
-          setOrders(prev => prev.map(order => 
-            order.id === payload.new.id ? payload.new as Order : order
-          ));
-        }
-      )
-      .subscribe((status) => console.log('🔌 Status da inscrição de pedidos:', status));
+    // Only set up realtime if there's an open cash register
+    let ordersChannel: any = null;
+    
+    if (currentRegister) {
+      // Configurar realtime para pedidos do caixa atual
+      ordersChannel = supabase
+        .channel('orders')
+        .on('postgres_changes',
+          { 
+            event: 'INSERT', 
+            schema: 'public', 
+            table: 'orders',
+            filter: `cash_register_id=eq.${currentRegister.id}`
+          },
+          (payload) => {
+            console.log('🔔 Novo pedido recebido via realtime:', payload);
+            setOrders(prev => [payload.new as Order, ...prev]);
+            // Tocar som de notificação
+            playNotificationSound();
+          }
+        )
+        .on('postgres_changes', 
+          { 
+            event: 'UPDATE', 
+            schema: 'public', 
+            table: 'orders',
+            filter: `cash_register_id=eq.${currentRegister.id}`
+          },
+          (payload) => {
+            console.log('🔄 Pedido atualizado via realtime:', payload);
+            setOrders(prev => prev.map(order => 
+              order.id === payload.new.id ? payload.new as Order : order
+            ));
+          }
+        )
+        .subscribe((status) => console.log('🔌 Status da inscrição de pedidos:', status));
+    }
 
     return () => {
-      supabase.removeChannel(ordersChannel);
+      if (ordersChannel) {
+        supabase.removeChannel(ordersChannel);
+      }
     };
-  }, [fetchOrders]);
+  }, [fetchOrders, currentRegister]);
 
   return {
     orders,
     loading,
     error,
+    isCashRegisterOpen,
     createOrder,
     updateOrderStatus,
     refetch: fetchOrders

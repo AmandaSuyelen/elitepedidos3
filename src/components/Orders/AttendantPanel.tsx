@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useOrders } from '../../hooks/useOrders';
 import { usePermissions } from '../../hooks/usePermissions';
 import PermissionGuard from '../PermissionGuard';
+import OrderPrintView from './OrderPrintView';
 import OrderCard from './OrderCard';
 import ManualOrderForm from './ManualOrderForm';
 import { OrderStatus } from '../../types/order';
@@ -30,8 +31,10 @@ const AttendantPanel: React.FC<AttendantPanelProps> = ({ onBackToAdmin }) => {
   const [showManualOrderForm, setShowManualOrderForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [lastOrderCount, setLastOrderCount] = useState(0);
+  const [newOrder, setNewOrder] = useState<any | null>(null);
   const [pendingOrdersCount, setPendingOrdersCount] = useState<number>(0);
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
+  const [showPrintPreview, setShowPrintPreview] = useState(false);
 
   // Carregar configuração de som
   useEffect(() => {
@@ -43,6 +46,27 @@ const AttendantPanel: React.FC<AttendantPanelProps> = ({ onBackToAdmin }) => {
       }
     } catch (error) {
       console.error('Erro ao carregar configurações de som:', error);
+    }
+  }, []);
+
+  // Carregar configurações de impressora
+  const [printerSettings, setPrinterSettings] = useState({
+    auto_print_delivery: false
+  });
+  
+  useEffect(() => {
+    try {
+      const savedSettings = localStorage.getItem('pdv_settings');
+      if (savedSettings) {
+        const settings = JSON.parse(savedSettings);
+        if (settings.printer_layout) {
+          setPrinterSettings({
+            auto_print_delivery: settings.printer_layout.auto_print_delivery || false
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao carregar configurações de impressora:', error);
     }
   }, []);
 
@@ -67,7 +91,39 @@ const AttendantPanel: React.FC<AttendantPanelProps> = ({ onBackToAdmin }) => {
     // Contar pedidos pendentes
     const currentPendingCount = orders.filter(order => order.status === 'pending').length;
     setPendingOrdersCount(currentPendingCount);
-    console.log('📊 Pedidos pendentes:', currentPendingCount, 'Anterior:', lastOrderCount);
+    
+    // Verificar se há novos pedidos
+    if (currentPendingCount > lastOrderCount && lastOrderCount > 0) {
+      console.log('🔔 Novos pedidos detectados!');
+      
+      // Encontrar o novo pedido
+      const newOrders = orders.filter(order => 
+        order.status === 'pending' && 
+        !orders.some(o => o.id === order.id && o.status !== 'pending')
+      );
+      
+      if (newOrders.length > 0) {
+        // Pegar o pedido mais recente
+        const latestOrder = newOrders.sort((a, b) => 
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        )[0];
+        
+        setNewOrder(latestOrder);
+        
+        // Imprimir automaticamente se configurado
+        if (printerSettings.auto_print_delivery) {
+          console.log('🖨️ Imprimindo pedido automaticamente:', latestOrder.id);
+          setShowPrintPreview(true);
+        }
+      }
+      
+      // Verificar se o som está habilitado
+      if (soundEnabled) {
+        playNewOrderSound();
+      } else {
+        console.log('🔕 Som de notificação desabilitado nas configurações');
+      }
+    }
     
     // Se já tínhamos contagem anterior e agora temos mais pedidos pendentes, tocar som
     if (lastOrderCount > 0 && currentPendingCount > lastOrderCount) {
@@ -358,6 +414,18 @@ const AttendantPanel: React.FC<AttendantPanelProps> = ({ onBackToAdmin }) => {
               window.location.reload();
             }, 1000);
           }}
+        />
+      )}
+      
+      {/* Print Preview Modal */}
+      {showPrintPreview && newOrder && (
+        <OrderPrintView 
+          order={newOrder} 
+          storeSettings={null}
+          onClose={() => {
+            setShowPrintPreview(false);
+            setNewOrder(null);
+          }} 
         />
       )}
     </div>

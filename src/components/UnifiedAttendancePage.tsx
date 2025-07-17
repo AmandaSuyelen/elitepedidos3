@@ -6,7 +6,8 @@ import {
   Settings,
   Truck, 
   ArrowLeft,
-  ShoppingBag
+  ShoppingBag,
+  AlertCircle
 } from 'lucide-react';
 import AttendantPanel from './Orders/AttendantPanel'; 
 import PDVSalesScreen from './PDV/PDVSalesScreen';
@@ -14,6 +15,7 @@ import CashRegisterMenu from './PDV/CashRegisterMenu';
 import { usePermissions } from '../hooks/usePermissions';
 import { useScale } from '../hooks/useScale';
 import { useOrders } from '../hooks/useOrders';
+import { usePDVCashRegister } from '../hooks/usePDVCashRegister';
 import { useStoreHours } from '../hooks/useStoreHours';
 import { PDVOperator } from '../types/pdv';
 
@@ -27,6 +29,7 @@ const UnifiedAttendancePage: React.FC<UnifiedAttendancePanelProps> = ({ operator
   const [activeTab, setActiveTab] = useState<'sales' | 'orders' | 'cash'>('sales');
   const { hasPermission } = usePermissions(operator);
   const { storeSettings: localStoreSettings } = useStoreHours();
+  const { isOpen: isCashRegisterOpen, currentRegister } = usePDVCashRegister();
   const scale = useScale();
   const { orders } = useOrders();
   
@@ -56,6 +59,26 @@ const UnifiedAttendancePage: React.FC<UnifiedAttendancePanelProps> = ({ operator
           </div>
         </div>
       </header>
+
+      {/* Cash Register Warning */}
+      {!isCashRegisterOpen && (activeTab === 'sales' || activeTab === 'orders') && (
+        <div className="max-w-7xl mx-auto px-4 mt-6">
+          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+            <div className="flex items-center gap-3">
+              <div className="bg-yellow-100 rounded-full p-2">
+                <AlertCircle size={20} className="text-yellow-600" />
+              </div>
+              <div>
+                <h3 className="font-medium text-yellow-800">Caixa Fechado</h3>
+                <p className="text-yellow-700 text-sm">
+                  Não é possível {activeTab === 'sales' ? 'realizar vendas' : 'visualizar pedidos'} sem um caixa aberto.
+                  Por favor, abra um caixa primeiro na aba "Caixas".
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="max-w-7xl mx-auto px-4 py-6">
         {/* Navigation Tabs */}
@@ -112,7 +135,7 @@ const UnifiedAttendancePage: React.FC<UnifiedAttendancePanelProps> = ({ operator
 
         {/* Content */}
         <div className="transition-all duration-300">
-          {activeTab === 'sales' && (isAdmin || hasPermission('can_view_sales')) && <PDVSalesScreen scaleHook={scaleHook || scale} storeSettings={settings} />}
+          {activeTab === 'sales' && (isAdmin || hasPermission('can_view_sales')) && <PDVSalesScreen scaleHook={scaleHook || scale} storeSettings={settings} operator={operator} />}
           {activeTab === 'orders' && (isAdmin || hasPermission('can_view_orders')) && <AttendantPanel storeSettings={settings} />}
           {activeTab === 'cash' && (isAdmin || hasPermission('can_view_cash_register')) && <CashRegisterMenu storeSettings={settings} />}
         </div>

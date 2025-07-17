@@ -718,6 +718,23 @@ const PDVSettings: React.FC = () => {
                   className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
+              
+              <div>
+                <label className="flex items-center gap-2 mb-1">
+                  <input
+                    type="checkbox"
+                    checked={printerSettings.auto_print_delivery || false}
+                    onChange={(e) => setPrinterSettings(prev => ({ ...prev, auto_print_delivery: e.target.checked }))}
+                    className="w-4 h-4 text-purple-600"
+                  />
+                  <span className="text-sm font-medium text-gray-700">
+                    Imprimir pedidos de delivery automaticamente
+                  </span>
+                </label>
+                <p className="text-xs text-gray-500 ml-6">
+                  Imprime automaticamente quando novos pedidos chegarem
+                </p>
+              </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">

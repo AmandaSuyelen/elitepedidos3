@@ -7,7 +7,12 @@ import PermissionGuard from '../PermissionGuard';
 const PDVSalesReport: React.FC = () => {
   const { hasPermission } = usePermissions();
   const [dateRange, setDateRange] = useState({
-    start: new Date().toISOString().split('T')[0],
+    start: (() => {
+      // Default to 30 days ago
+      const date = new Date();
+      date.setDate(date.getDate() - 30);
+      return date.toISOString().split('T')[0];
+    })(),
     end: new Date().toISOString().split('T')[0]
   });
   const [report, setReport] = useState<any | null>(null);
@@ -16,15 +21,21 @@ const PDVSalesReport: React.FC = () => {
   const generateReport = async () => {
     setLoading(true);
     try {
+      // Format dates properly for Supabase query
+      const startDate = `${dateRange.start}T00:00:00`;
+      const endDate = `${dateRange.end}T23:59:59`;
+      
+      console.log('Generating report with date range:', {
+        start: startDate,
+        end: endDate,
+      });
+      
       // Buscar vendas do período
       const { data: sales, error: salesError } = await supabase
         .from('pdv_sales')
-        .select(`
-          *,
-          pdv_sale_items(*)
-        `)
-        .gte('created_at', `${dateRange.start}T00:00:00`)
-        .lte('created_at', `${dateRange.end}T23:59:59`)
+        .select('*, pdv_sale_items(*)')
+        .gte('created_at', startDate)
+        .lte('created_at', endDate)
         .eq('is_cancelled', false);
 
       if (salesError) throw salesError;
@@ -68,6 +79,7 @@ const PDVSalesReport: React.FC = () => {
       console.error('Erro ao gerar relatório:', err);
       alert('Erro ao gerar relatório');
     } finally {
+      console.log('Consulta finalizada');
       setLoading(false);
     }
   };
@@ -106,6 +118,29 @@ const PDVSalesReport: React.FC = () => {
   useEffect(() => {
     generateReport();
   }, []);
+  
+  // Debug function to check date filtering
+  const debugDateFiltering = () => {
+    console.log('Depurando filtro de datas:');
+    const startDate = `${dateRange.start}T00:00:00`;
+    const endDate = `${dateRange.end}T23:59:59`;
+    
+    console.log('Data inicial (formato local):', dateRange.start);
+    console.log('Data final (formato local):', dateRange.end);
+    console.log('Formato para query:');
+    console.log('Data inicial:', startDate);
+    console.log('Data final:', endDate);
+    console.log('Consulta SQL equivalente:');
+    console.log(`SELECT * FROM pdv_sales 
+      WHERE created_at >= '${startDate}' 
+      AND created_at <= '${endDate}'
+      AND is_cancelled = false`);
+    
+    // Mostrar feedback visual
+    alert(`Depuração de datas ativada. Verifique o console para mais detalhes.
+Data inicial: ${dateRange.start}
+Data final: ${dateRange.end}`);
+  };
 
   return (
     <PermissionGuard hasPermission={hasPermission('can_view_sales_report')} showMessage={true}>
@@ -176,6 +211,17 @@ const PDVSalesReport: React.FC = () => {
                 Exportar
               </button>
             )}
+              <button
+                onClick={debugDateFiltering}
+                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-3 rounded-lg font-medium transition-colors flex items-center gap-2"
+                title="Depurar filtro de datas"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                Debug
+              </button>
+
           </div>
         </div>
       </div>
