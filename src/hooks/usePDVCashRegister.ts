@@ -401,7 +401,16 @@ export const usePDVCashRegister = () => {
     console.log('🔒 Iniciando fechamento de caixa com valor:', closingAmount);
     console.log('💰 Saldo esperado:', summary.expected_balance);
     console.log('🧮 Diferença calculada:', closingAmount - summary.expected_balance);
-    console.log('📊 Summary completo:', summary);
+    console.log('📊 Summary completo antes do fechamento:', {
+      opening_amount: summary.opening_amount,
+      sales_total: summary.sales_total,
+      delivery_total: summary.delivery_total,
+      other_income_total: summary.other_income_total,
+      total_expense: summary.total_expense,
+      expected_balance: summary.expected_balance,
+      sales_count: summary.sales_count,
+      delivery_count: summary.delivery_count
+    });
     
     try {
       // Check if Supabase is configured
@@ -443,14 +452,16 @@ export const usePDVCashRegister = () => {
         ...prev,
         closing_amount: closingAmount,
         closed_at: new Date().toISOString(),
-        difference: closingAmount - (summary.expected_balance || 0)
+        difference: closingAmount - (summary?.expected_balance || 0)
       } : null);
       
-      await fetchCashRegisterStatus();
+      // Não recarregar o status imediatamente para preservar os dados do summary
+      // await fetchCashRegisterStatus();
       
       return { 
         success: true, 
-        data: data.data
+        data: data.data,
+        summary: summary // Retornar o summary atual
       };
     } catch (err) {
       console.error('❌ Erro ao fechar caixa (exceção):', err);
@@ -459,7 +470,7 @@ export const usePDVCashRegister = () => {
         error: err instanceof Error ? err.message : 'Erro desconhecido ao fechar caixa' 
       };
     }
-  }, [currentRegister, fetchCashRegisterStatus]);
+  }, [currentRegister, summary]);
 
   const addCashEntry = useCallback(async (entry: {
     type: 'income' | 'expense';

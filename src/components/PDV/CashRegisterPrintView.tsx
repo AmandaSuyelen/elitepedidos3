@@ -339,28 +339,28 @@ const CashRegisterPrintView: React.FC<CashRegisterPrintViewProps> = ({
               <div className="text-xs space-y-1">
                 <div className="flex justify-between">
                   <span>Valor de Abertura:</span>
-                  <span>{formatPrice(summary.opening_amount || register.opening_amount || 0)}</span>
+                  <span>{formatPrice(register.opening_amount || 0)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Vendas PDV:</span>
-                  <span>{formatPrice(summary.sales_total || 0)}</span>
+                  <span>{formatPrice(summary?.sales_total || 0)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Vendas Delivery:</span>
-                  <span>{formatPrice(summary.delivery_total || 0)}</span>
+                  <span>{formatPrice(summary?.delivery_total || 0)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Outras Entradas:</span>
-                  <span>{formatPrice(summary.other_income_total || 0)}</span>
+                  <span>{formatPrice(summary?.other_income_total || 0)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Saídas:</span>
-                  <span>{formatPrice(summary.total_expense || 0)}</span>
+                  <span>{formatPrice(summary?.total_expense || 0)}</span>
                 </div>
                 <div className="pt-2 border-t border-gray-300">
                   <div className="flex justify-between font-bold">
                     <span>SALDO ESPERADO:</span>
-                    <span>{formatPrice(summary.expected_balance || 0)}</span>
+                    <span>{formatPrice(summary?.expected_balance || 0)}</span>
                   </div>
                 </div>
                 {register.closing_amount !== null && (
@@ -373,12 +373,12 @@ const CashRegisterPrintView: React.FC<CashRegisterPrintViewProps> = ({
                       <span>Diferença:</span>
                       <span className="font-bold">
                         {(() => {
-                          const difference = (register.closing_amount || 0) - (summary.expected_balance || 0);
+                          const difference = (register.closing_amount || 0) - (summary?.expected_balance || 0);
                           return formatPrice(difference);
                         })()}
                         <span className="ml-1 text-xs">
                           {(() => {
-                            const difference = (register.closing_amount || 0) - (summary.expected_balance || 0);
+                            const difference = (register.closing_amount || 0) - (summary?.expected_balance || 0);
                             return difference < 0 ? '(falta)' : difference > 0 ? '(sobra)' : '(exato)';
                           })()}
                         </span>
