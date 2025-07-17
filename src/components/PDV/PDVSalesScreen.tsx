@@ -330,6 +330,13 @@ const PDVSalesScreen: React.FC<PDVSalesScreenProps> = ({ scaleHook, operator, st
       return;
     }
     
+    // Check if Supabase is configured
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    if (!supabaseUrl || supabaseUrl.includes('placeholder')) {
+      alert('Sistema não configurado. Configure as variáveis de ambiente do Supabase para usar esta funcionalidade.');
+      return;
+    }
+    
     if (items.length === 0) {
       alert('Carrinho vazio. Adicione produtos antes de finalizar a venda.');
       return;

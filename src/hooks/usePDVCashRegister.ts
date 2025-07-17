@@ -68,6 +68,36 @@ export const usePDVCashRegister = () => {
       setLoading(true);
       setError(null);
       
+      // Check if Supabase is properly configured
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      
+      if (!supabaseUrl || !supabaseKey || 
+          supabaseUrl === 'your_supabase_url_here' || 
+          supabaseKey === 'your_supabase_anon_key_here' ||
+          supabaseUrl.includes('placeholder')) {
+        console.warn('⚠️ Supabase não configurado - usando modo offline');
+        setCurrentRegister(null);
+        setEntries([]);
+        setSummary({
+          opening_amount: 0,
+          sales_total: 0,
+          total_income: 0,
+          other_income_total: 0,
+          total_expense: 0,
+          expected_balance: 0,
+          actual_balance: 0,
+          difference: 0,
+          sales_count: 0,
+          delivery_total: 0,
+          delivery_count: 0,
+          total_all_sales: 0,
+          sales: {}
+        });
+        setLoading(false);
+        return;
+      }
+      
       console.log('🔄 Buscando status do caixa e movimentações...');
       
       // Verificar se existe um caixa aberto
@@ -329,6 +359,12 @@ export const usePDVCashRegister = () => {
 
   const openCashRegister = useCallback(async (openingAmount: number) => {
     try {
+      // Check if Supabase is configured
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      if (!supabaseUrl || supabaseUrl.includes('placeholder')) {
+        throw new Error('Supabase não configurado. Configure as variáveis de ambiente para usar esta funcionalidade.');
+      }
+      
       if (openingAmount <= 0) {
         throw new Error('O valor de abertura deve ser maior que zero.');
       }
@@ -367,6 +403,15 @@ export const usePDVCashRegister = () => {
     console.log('🧮 Diferença calculada:', closingAmount - summary.expected_balance);
     
     try {
+      // Check if Supabase is configured
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      if (!supabaseUrl || supabaseUrl.includes('placeholder')) {
+        return {
+          success: false,
+          error: 'Supabase não configurado. Configure as variáveis de ambiente para usar esta funcionalidade.'
+        };
+      }
+      
       if (!currentRegister) {
         return { success: false, error: 'Nenhum caixa aberto para fechar' };
       }
@@ -413,6 +458,12 @@ export const usePDVCashRegister = () => {
     payment_method?: string;
   }) => {
     try {
+      // Check if Supabase is configured
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      if (!supabaseUrl || supabaseUrl.includes('placeholder')) {
+        throw new Error('Supabase não configurado. Configure as variáveis de ambiente para usar esta funcionalidade.');
+      }
+      
       if (!currentRegister) {
         throw new Error('Nenhum caixa aberto. Abra o caixa antes de adicionar entradas.');
       }

@@ -32,6 +32,7 @@ const UnifiedAttendancePage: React.FC<UnifiedAttendancePanelProps> = ({ operator
   const { isOpen: isCashRegisterOpen, currentRegister } = usePDVCashRegister();
   const scale = useScale();
   const { orders } = useOrders();
+  const [supabaseConfigured, setSupabaseConfigured] = useState(true);
   
   // Calculate pending orders count from the orders data
   const pendingOrdersCount = orders.filter(order => order.status === 'pending').length;
@@ -40,6 +41,19 @@ const UnifiedAttendancePage: React.FC<UnifiedAttendancePanelProps> = ({ operator
   const isAdmin = !operator || operator.code?.toUpperCase() === 'ADMIN';
 
   const settings = storeSettings || localStoreSettings;
+  
+  // Check Supabase configuration on mount
+  React.useEffect(() => {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    
+    const isConfigured = supabaseUrl && supabaseKey && 
+                        supabaseUrl !== 'your_supabase_url_here' && 
+                        supabaseKey !== 'your_supabase_anon_key_here' &&
+                        !supabaseUrl.includes('placeholder');
+    
+    setSupabaseConfigured(isConfigured);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -60,8 +74,28 @@ const UnifiedAttendancePage: React.FC<UnifiedAttendancePanelProps> = ({ operator
         </div>
       </header>
 
+      {/* Supabase Configuration Warning */}
+      {!supabaseConfigured && (
+        <div className="max-w-7xl mx-auto px-4 mt-6">
+          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+            <div className="flex items-center gap-3">
+              <div className="bg-yellow-100 rounded-full p-2">
+                <AlertCircle size={20} className="text-yellow-600" />
+              </div>
+              <div>
+                <h3 className="font-medium text-yellow-800">Sistema em Modo Demonstração</h3>
+                <p className="text-yellow-700 text-sm">
+                  O Supabase não está configurado. Algumas funcionalidades estarão limitadas.
+                  Configure as variáveis de ambiente VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY para acesso completo.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Cash Register Warning */}
-      {!isCashRegisterOpen && (activeTab === 'sales' || activeTab === 'orders') && (
+      {supabaseConfigured && !isCashRegisterOpen && (activeTab === 'sales' || activeTab === 'orders') && (
         <div className="max-w-7xl mx-auto px-4 mt-6">
           <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
             <div className="flex items-center gap-3">
