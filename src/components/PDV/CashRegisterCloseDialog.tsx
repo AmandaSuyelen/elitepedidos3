@@ -55,13 +55,15 @@ const CashRegisterCloseDialog: React.FC<CashRegisterCloseDialogProps> = ({
     }
 
     try {
+      console.log('📊 Dados para WhatsApp:', { register, summary });
+      
       let message = `*RELATÓRIO DE CAIXA - ELITE AÇAÍ*\n\n`;
     
       // Dados do caixa
       message += `*DADOS DO CAIXA:*\n`;
       message += `Abertura: ${formatDate(register.opened_at)}\n`;
       message += `Fechamento: ${formatDate(register.closed_at)}\n`;
-      message += `Valor de abertura: ${formatPrice(register.opening_amount || 0)}\n`;
+      message += `Valor de abertura: ${formatPrice(summary.opening_amount || register.opening_amount || 0)}\n`;
       message += `Valor de fechamento: ${formatPrice(register.closing_amount || 0)}\n\n`;
     
       // Resumo financeiro
@@ -71,7 +73,15 @@ const CashRegisterCloseDialog: React.FC<CashRegisterCloseDialogProps> = ({
       message += `Outras entradas: ${formatPrice(summary.other_income_total || 0)}\n`;
       message += `Saídas: ${formatPrice(summary.total_expense || 0)}\n`;
       message += `Saldo esperado: ${formatPrice(summary.expected_balance || 0)}\n`;
-      message += `Diferença: ${formatPrice((register.closing_amount || 0) - (summary.expected_balance || 0))}\n\n`;
+      
+      const difference = (register.closing_amount || 0) - (summary.expected_balance || 0);
+      message += `Diferença: ${formatPrice(difference)}`;
+      if (difference > 0) {
+        message += ` (sobra)`;
+      } else if (difference < 0) {
+        message += ` (falta)`;
+      }
+      message += `\n\n`;
     
       // Formas de pagamento
       message += `*FORMAS DE PAGAMENTO:*\n`;
@@ -94,6 +104,8 @@ const CashRegisterCloseDialog: React.FC<CashRegisterCloseDialogProps> = ({
           const methodName = getPaymentMethodName(method);
           message += `${methodName}: ${formatPrice(total)}\n`;
         });
+      } else {
+        message += `Dinheiro: ${formatPrice(summary.sales_total || 0)}\n`;
       }
     
       message += `\n*Relatório gerado em:* ${new Date().toLocaleString('pt-BR')}`;

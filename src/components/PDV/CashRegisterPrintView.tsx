@@ -339,11 +339,11 @@ const CashRegisterPrintView: React.FC<CashRegisterPrintViewProps> = ({
               <div className="text-xs space-y-1">
                 <div className="flex justify-between">
                   <span>Valor de Abertura:</span>
-                  <span>{formatPrice(summary.opening_amount)}</span>
+                  <span>{formatPrice(summary.opening_amount || register.opening_amount || 0)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Vendas PDV:</span>
-                  <span>{formatPrice(summary.sales_total)}</span>
+                  <span>{formatPrice(summary.sales_total || 0)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Vendas Delivery:</span>
@@ -355,12 +355,12 @@ const CashRegisterPrintView: React.FC<CashRegisterPrintViewProps> = ({
                 </div>
                 <div className="flex justify-between">
                   <span>Saídas:</span>
-                  <span>{formatPrice(summary.total_expense)}</span>
+                  <span>{formatPrice(summary.total_expense || 0)}</span>
                 </div>
                 <div className="pt-2 border-t border-gray-300">
                   <div className="flex justify-between font-bold">
                     <span>SALDO ESPERADO:</span>
-                    <span>{formatPrice(summary.expected_balance)}</span>
+                    <span>{formatPrice(summary.expected_balance || 0)}</span>
                   </div>
                 </div>
                 {register.closing_amount !== null && (
@@ -371,15 +371,17 @@ const CashRegisterPrintView: React.FC<CashRegisterPrintViewProps> = ({
                     </div>
                     <div className="flex justify-between">
                       <span>Diferença:</span>
-                      <span className={register.difference && register.difference >= 0 ? 'font-bold' : 'font-bold'}>
-                        {formatPrice(register.difference || 0)}
-                        {register.difference && register.difference > 0 ? ' (sobra)' : 
-                         register.difference && register.difference < 0 ? ' (falta)' : ''}
-                      </span>
-                    </div>
-                  </>
-                )}
-              </div>
+                      <span className="font-bold">
+                        {(() => {
+                          const difference = (register.closing_amount || 0) - (summary.expected_balance || 0);
+                          return formatPrice(difference);
+                        })()}
+                        <span className="ml-1 text-xs">
+                          {(() => {
+                            const difference = (register.closing_amount || 0) - (summary.expected_balance || 0);
+                            return difference < 0 ? '(falta)' : difference > 0 ? '(sobra)' : '(exato)';
+                          })()}
+                        </span>
             </div>
 
             {/* Movimentações Detalhadas */}

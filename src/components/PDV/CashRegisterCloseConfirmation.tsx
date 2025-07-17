@@ -63,7 +63,7 @@ const CashRegisterCloseConfirmation: React.FC<CashRegisterCloseConfirmationProps
                 <h3 className="text-lg font-bold text-blue-800 mb-2">Resumo do Caixa</h3>
                 <div className="space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-blue-700">Valor de abertura:</span>
+                  <span className="font-medium text-blue-800">{formatPrice(summary.opening_amount || register?.opening_amount || 0)}</span>
                     <span className="font-medium text-blue-800">{formatPrice(register?.opening_amount || 0)}</span>
                   </div>
                   <div className="flex justify-between">
@@ -88,6 +88,12 @@ const CashRegisterCloseConfirmation: React.FC<CashRegisterCloseConfirmationProps
                       <span className="font-bold text-blue-800">{formatPrice(summary?.expected_balance || 0)}</span>
                     </div>
                   </div>
+                </div>
+                <div className="flex justify-between pt-1 text-xs text-gray-500">
+                  <p className="text-xs">Apenas transações em dinheiro</p>
+                  <p>
+                    {formatPrice(summary?.opening_amount || 0)} + entradas - saídas
+                  </p>
                 </div>
               </div>
             </div>

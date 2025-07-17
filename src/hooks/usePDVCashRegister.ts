@@ -401,6 +401,7 @@ export const usePDVCashRegister = () => {
     console.log('🔒 Iniciando fechamento de caixa com valor:', closingAmount);
     console.log('💰 Saldo esperado:', summary.expected_balance);
     console.log('🧮 Diferença calculada:', closingAmount - summary.expected_balance);
+    console.log('📊 Summary completo:', summary);
     
     try {
       // Check if Supabase is configured
@@ -436,6 +437,15 @@ export const usePDVCashRegister = () => {
       }
       
       console.log('✅ Caixa fechado com sucesso. Dados:', data);
+      
+      // Atualizar o registro atual com os dados de fechamento
+      setCurrentRegister(prev => prev ? {
+        ...prev,
+        closing_amount: closingAmount,
+        closed_at: new Date().toISOString(),
+        difference: closingAmount - (summary.expected_balance || 0)
+      } : null);
+      
       await fetchCashRegisterStatus();
       
       return { 
