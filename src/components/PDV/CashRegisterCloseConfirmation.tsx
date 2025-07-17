@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, AlertTriangle, DollarSign, CheckCircle } from 'lucide-react';
+import { X, AlertTriangle, DollarSign, CheckCircle, Printer } from 'lucide-react';
 import { PDVCashRegister, PDVCashRegisterSummary, PDVCashRegisterEntry } from '../../types/pdv';
 
 interface CashRegisterCloseConfirmationProps {
@@ -23,6 +23,7 @@ const CashRegisterCloseConfirmation: React.FC<CashRegisterCloseConfirmationProps
 
   // State for closing amount
   const [closingAmount, setClosingAmount] = useState(summary?.expected_balance || 0);
+  const [printMovements, setPrintMovements] = useState(true);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -113,6 +114,30 @@ const CashRegisterCloseConfirmation: React.FC<CashRegisterCloseConfirmationProps
           </div>
 
           <div className="mt-6 space-y-3">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <Printer size={20} className="text-blue-600 mt-1 flex-shrink-0" />
+                <div className="flex-1">
+                  <label className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      checked={printMovements}
+                      onChange={(e) => setPrintMovements(e.target.checked)}
+                      className="w-4 h-4 text-blue-600"
+                    />
+                    <div>
+                      <span className="font-medium text-blue-800">
+                        Imprimir movimentações do caixa após fechamento
+                      </span>
+                      <p className="text-blue-700 text-sm mt-1">
+                        Gera um relatório térmico com todas as movimentações do caixa
+                      </p>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Valor de fechamento
@@ -142,7 +167,7 @@ const CashRegisterCloseConfirmation: React.FC<CashRegisterCloseConfirmationProps
             <button
               onClick={() => {
                 // Call the onConfirm function passed from the parent
-                onConfirm(closingAmount);
+                onConfirm(closingAmount, printMovements);
               }}
               disabled={isProcessing}
               className="flex-1 bg-green-500 hover:bg-green-600 disabled:bg-gray-300 text-white py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
