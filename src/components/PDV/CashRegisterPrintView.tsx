@@ -402,6 +402,7 @@ const CashRegisterPrintView: React.FC<CashRegisterPrintViewProps> = ({
                           {entry.type === 'income' ? '+' : '-'}{formatPrice(entry.amount)}
                         </span>
                       </div>
+                    </div>
                       
                       <div className="ml-2">
                         <div>Descrição: {entry.description}</div>
@@ -435,7 +436,6 @@ const CashRegisterPrintView: React.FC<CashRegisterPrintViewProps> = ({
                   return null;
                 })}
               </div>
-            </div>
 
             {/* Rodapé */}
             <div className="text-center text-xs border-t border-dashed border-gray-400 pt-2">
