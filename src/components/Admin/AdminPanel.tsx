@@ -4,13 +4,14 @@ import ProductsPanel from './ProductsPanel';
 import NeighborhoodsPanel from './NeighborhoodsPanel';
 import StoreHoursPanel from './StoreHoursPanel';
 import UnifiedAttendancePage from '../UnifiedAttendancePage';
+import PDVOperators from '../PDV/PDVOperators';
 
 interface AdminPanelProps {
   onLogout: () => void;
 }
 
 const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
-  const [activeTab, setActiveTab] = useState<'products' | 'neighborhoods' | 'hours' | 'pdv'>('products');
+  const [activeTab, setActiveTab] = useState<'products' | 'neighborhoods' | 'hours' | 'pdv' | 'users'>('products');
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -22,6 +23,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
         return <StoreHoursPanel />; 
       case 'pdv':
         return <UnifiedAttendancePage />;
+      case 'users':
+        return <PDVOperators />;
       default:
         return <ProductsPanel />;
     }
@@ -41,6 +44,17 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
               <h1 className="text-2xl font-bold text-gray-800">Administrativo</h1>
               <p className="text-gray-600">Elite Açaí - Gestão Completa</p>
               </div>
+              <button
+                onClick={() => setActiveTab('users')}
+                className={`px-6 py-3 rounded-lg font-medium transition-colors flex items-center gap-2 ${
+                  activeTab === 'users'
+                    ? 'bg-indigo-600 text-white shadow-lg'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                <Users size={20} />
+                Usuários
+              </button>
             </div>
             <button
               onClick={onLogout}
