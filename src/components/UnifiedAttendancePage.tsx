@@ -7,7 +7,9 @@ import {
   Truck, 
   ArrowLeft,
   ShoppingBag,
-  AlertCircle
+  AlertCircle,
+  User,
+  LogOut
 } from 'lucide-react';
 import AttendantPanel from './Orders/AttendantPanel'; 
 import PDVSalesScreen from './PDV/PDVSalesScreen';
@@ -23,9 +25,10 @@ interface UnifiedAttendancePanelProps {
   operator?: PDVOperator;
   storeSettings?: any;
   scaleHook?: ReturnType<typeof useScale>;
+  onLogout?: () => void;
 }
 
-const UnifiedAttendancePage: React.FC<UnifiedAttendancePanelProps> = ({ operator, storeSettings, scaleHook }) => {
+const UnifiedAttendancePage: React.FC<UnifiedAttendancePanelProps> = ({ operator, storeSettings, scaleHook, onLogout }) => {
   const [activeTab, setActiveTab] = useState<'sales' | 'orders' | 'cash'>('sales');
   const { hasPermission } = usePermissions(operator);
   const { storeSettings: localStoreSettings } = useStoreHours();
@@ -70,6 +73,26 @@ const UnifiedAttendancePage: React.FC<UnifiedAttendancePanelProps> = ({ operator
                 <p className="text-gray-600">Elite Açaí - Vendas, Pedidos e Caixa</p>
               </div>
             </div>
+            
+            {/* User info and logout */}
+            {operator && (
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 bg-gray-100 px-3 py-1.5 rounded-lg">
+                  <User size={18} className="text-gray-600" />
+                  <span className="text-sm font-medium text-gray-700">{operator.name}</span>
+                </div>
+                {onLogout && (
+                  <button
+                    onClick={onLogout}
+                    className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg transition-colors text-sm"
+                    title="Sair do sistema"
+                  >
+                    <LogOut size={16} />
+                    Sair
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </header>

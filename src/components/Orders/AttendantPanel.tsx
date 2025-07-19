@@ -22,9 +22,10 @@ import {
 
 interface AttendantPanelProps {
   onBackToAdmin?: () => void;
+  storeSettings?: any;
 }
 
-const AttendantPanel: React.FC<AttendantPanelProps> = ({ onBackToAdmin }) => {
+const AttendantPanel: React.FC<AttendantPanelProps> = ({ onBackToAdmin, storeSettings }) => {
   const { hasPermission } = usePermissions();
   const { orders, loading, updateOrderStatus } = useOrders();
   const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all'>('all');
